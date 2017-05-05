@@ -16,7 +16,7 @@ rotateCCW90 image@Image {imageWidth, imageHeight} = generateImage pixel imageHei
         pixel x y = pixelAt image ((imageWidth - 1) - y) x
 
 cubeImage :: Int -> Int -> Int -> Image PixelRGB8
-cubeImage width height frameNo = generateImage pixel width height
+cubeImage frameNo = generateImage pixel
     where
         pixel x y = PixelRGB8 (fromIntegral (x `mod` 256)) (fromIntegral (y `mod` 256)) 0
 
@@ -28,5 +28,5 @@ main = do
     let filenameFormat = args !! 0
 
     forM_ [0..7] $ \frameNo -> do
-        let cube = cubeImage width height frameNo
+        let cube = cubeImage frameNo width height
         writeBitmap (printf filenameFormat frameNo) $ rotateCCW90 cube
