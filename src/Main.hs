@@ -43,12 +43,12 @@ lineRayDistance (Ray a0 a1) (LineSeg b0 b1) = if denom < epsilon then parallel e
         t1 = detB / denom
         pA = a0 &+ (_A &* t0)
         pB = b0 &+ (_B &* t1)
-        pA' = if t0 > magA then a1 else pA
+        pA' = if t0 < 0 then a0 else pA
         dt = _B &. (pA' &- b0)
         pB' = if t1 < 0 then b0 else (if t1 > magB then b1 else pB)
         clamp a b x = if x < a then a else (if x > b then b else x)
         dotA = _B &. (pA &- b0)
-        pB'' = if t0 > magA then b0 &+ (_B &* (clamp 0 magB dotA)) else pB'
+        pB'' = if t0 < 0 then b0 &+ (_B &* (clamp 0 magB dotA)) else pB'
         dotB = _A &. (pB &- a0)
         pA'' = if t1 < 0 || t1 > magB then a0 &+ (_A &* (clamp 0 magA dotB)) else pA'
         nonparallel = norm (pA'' &- pB'')
@@ -66,7 +66,7 @@ cube = [LineSeg (cubeVerts !! a) (cubeVerts !! b) | b <- [0..7], a <- [0..b], on
         oneCompDiff (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) = length (filter id $ zipWith (==) [x1, y1, z1] [x2, y2, z2]) == 2
 
 rotate :: Float -> Float -> Float -> Vec3 -> Vec3
-rotate rx ry rz v = (rotMatrixX rz) *. (rotMatrixY ry) *. (rotMatrixZ rx) *. v
+rotate rx ry rz v = (rotMatrixZ rz) *. (rotMatrixY ry) *. (rotMatrixX rx) *. v
 
 rotateLineSeg :: Float -> Float -> Float -> LineSeg -> LineSeg
 rotateLineSeg rx ry rz (LineSeg v1 v2) = LineSeg (rotate rx ry rz v1) (rotate rx ry rz v2)
