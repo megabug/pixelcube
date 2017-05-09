@@ -67,8 +67,8 @@ rotate rx ry rz v = (rotMatrixZ rz) *. (rotMatrixY ry) *. (rotMatrixX rx) *. v
 rotateLineSeg :: Float -> Float -> Float -> LineSeg -> LineSeg
 rotateLineSeg rx ry rz (LineSeg v1 v2) = LineSeg (rotate rx ry rz v1) (rotate rx ry rz v2)
 
-cubeImage :: Int -> Int -> Float -> Image PixelRGB8
-cubeImage width height t = generateImage pixel width height
+render :: Int -> Int -> [LineSeg] -> Image PixelRGB8
+render width height lineSegs = generateImage pixel width height
     where
         pixel x y = PixelRGB8 d d d
             where
@@ -78,11 +78,7 @@ cubeImage width height t = generateImage pixel width height
                         (Vec3 (((fromIntegral x) - ((fromIntegral width) / 2)) / md / zoom)
                               (((fromIntegral y) - ((fromIntegral height) / 2)) / md / zoom)
                               0)
-                rx =  t        * 2 * pi
-                ry = (t + 0.3) * 2 * pi
-                rz = (t + 0.7) * 2 * pi
-                rotCube = map (rotateLineSeg rx ry rz) cube
-                d = floor $ (255 -) $ min ((minimum (map (lineRayDistance r) rotCube)) * 10000) 255
+                d = floor $ (255 -) $ min ((minimum (map (lineRayDistance r) lineSegs)) * 10000) 255
 
 width  = 600
 height = 480
@@ -91,8 +87,13 @@ main = do
     args <- getArgs
     let filenameFormat = args !! 0
 
-    let numFrames = 100 :: Int
+    let numFrames = 10 :: Int
     forM_ [0..(numFrames - 1)] $ \frameNo -> do
         putStrLn (printf "%d / %d..." (frameNo + 1) numFrames)
-        let cube = cubeImage width height ((fromIntegral frameNo) / (fromIntegral numFrames))
-        writeBitmap (printf filenameFormat frameNo) $ {-rotateCCW90-} cube
+        let t = (fromIntegral frameNo) / (fromIntegral numFrames)
+        let rx =  t        * 2 * pi
+        let ry = (t + 0.3) * 2 * pi
+        let rz = (t + 0.7) * 2 * pi
+        let rotCube = map (rotateLineSeg rx ry rz) cube
+        let image = render width height rotCube
+        writeBitmap (printf filenameFormat frameNo) $ {-rotateCCW90-} image
