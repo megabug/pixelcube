@@ -82,7 +82,7 @@ cubeImage width height t = generateImage pixel width height
                 ry = (t + 0.3) * 2 * pi
                 rz = (t + 0.7) * 2 * pi
                 rotCube = map (rotateLineSeg rx ry rz) cube
-                d = floor $ min ((minimum (map (lineRayDistance r) rotCube)) * 4000) 255
+                d = floor $ (255 -) $ min ((minimum (map (lineRayDistance r) rotCube)) * 10000) 255
 
 width  = 600
 height = 480
@@ -91,7 +91,7 @@ main = do
     args <- getArgs
     let filenameFormat = args !! 0
 
-    let numFrames = 20 :: Int
+    let numFrames = 100 :: Int
     forM_ [0..(numFrames - 1)] $ \frameNo -> do
         putStrLn (printf "%d / %d..." (frameNo + 1) numFrames)
         let cube = cubeImage width height ((fromIntegral frameNo) / (fromIntegral numFrames))
