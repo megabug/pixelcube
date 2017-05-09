@@ -30,12 +30,9 @@ lineRayDistance (Ray a0 a1) (LineSeg b0 b1) = if denom < epsilon then parallel e
         denom = normsqr cross
         d0 = _A &. (b0 &- a0)
         d1 = _A &. (b1 &- a0)
-        parallel = if d0 <= magA && d1 <= magA
-                       then norm (a1 &- (if abs d0 < abs d1 then b0 else b1))
-                       else
-                           if d0 >= magA && d1 >= magA
-                           then norm (a1 &- (if abs d0 < abs d1 then b0 else b1))
-                           else norm ((_A &* d0) &+ a0 &- b0)
+        parallel = if d0 <= 0 && d1 <= 0
+                       then norm (a0 &- (if abs d0 < abs d1 then b0 else b1))
+                       else norm ((_A &* d0) &+ a0 &- b0)
         t = b0 &- a0
         detA = det3 t _B cross
         detB = det3 t _A cross
@@ -44,13 +41,12 @@ lineRayDistance (Ray a0 a1) (LineSeg b0 b1) = if denom < epsilon then parallel e
         pA = a0 &+ (_A &* t0)
         pB = b0 &+ (_B &* t1)
         pA' = if t0 < 0 then a0 else pA
-        dt = _B &. (pA' &- b0)
         pB' = if t1 < 0 then b0 else (if t1 > magB then b1 else pB)
         clamp a b x = if x < a then a else (if x > b then b else x)
-        dotA = _B &. (pA &- b0)
-        pB'' = if t0 < 0 then b0 &+ (_B &* (clamp 0 magB dotA)) else pB'
-        dotB = _A &. (pB &- a0)
-        pA'' = if t1 < 0 || t1 > magB then a0 &+ (_A &* (clamp 0 magA dotB)) else pA'
+        dot1 = _B &. (pA' &- b0)
+        pB'' = if t0 < 0 then b0 &+ (_B &* (clamp 0 magB dot1)) else pB'
+        dot2 = _A &. (pB' &- a0)
+        pA'' = if t1 < 0 || t1 > magB then a0 &+ (_A &* (max 0 dot2)) else pA'
         nonparallel = norm (pA'' &- pB'')
 
 rotateCCW90 :: Pixel a => Image a -> Image a
@@ -76,14 +72,15 @@ cubeImage width height t = generateImage pixel width height
     where
         pixel x y = PixelRGB8 d d d
             where
-                md = (fromIntegral $ min width height) / 3
+                md = fromIntegral $ min width height
+                zoom = 0.4
                 r = Ray (Vec3 0 0 (-2))
-                        (Vec3 (((fromIntegral x) - ((fromIntegral width) / 2)) / md)
-                              (((fromIntegral y) - ((fromIntegral height) / 2)) / md)
+                        (Vec3 (((fromIntegral x) - ((fromIntegral width) / 2)) / md / zoom)
+                              (((fromIntegral y) - ((fromIntegral height) / 2)) / md / zoom)
                               0)
-                rx =  t        * 0 * pi
+                rx =  t        * 2 * pi
                 ry = (t + 0.3) * 2 * pi
-                rz = (t + 0.7) * 0 * pi
+                rz = (t + 0.7) * 2 * pi
                 rotCube = map (rotateLineSeg rx ry rz) cube
                 d = floor $ min ((minimum (map (lineRayDistance r) rotCube)) * 4000) 255
 
