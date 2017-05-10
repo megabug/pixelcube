@@ -67,17 +67,20 @@ rotate rx ry rz v = (rotMatrixZ rz) *. (rotMatrixY ry) *. (rotMatrixX rx) *. v
 rotateLineSeg :: Float -> Float -> Float -> LineSeg -> LineSeg
 rotateLineSeg rx ry rz (LineSeg v1 v2) = LineSeg (rotate rx ry rz v1) (rotate rx ry rz v2)
 
-render :: Int -> Int -> [LineSeg] -> Image PixelRGB8
-render width height lineSegs = generateImage pixel width height
+orthoCamera :: Float -> Float -> Float -> Float -> Float -> Ray
+orthoCamera zoom width height x y = Ray (Vec3 0 0 (-2))
+                                        (Vec3 ((x - (width  / 2)) / md / zoom)
+                                              ((y - (height / 2)) / md / zoom)
+                                         0)
+    where
+        md = min width height
+
+render :: Int -> Int -> (Float -> Float -> Float -> Float -> Ray) -> [LineSeg] -> Image PixelRGB8
+render width height camera lineSegs = generateImage pixel width height
     where
         pixel x y = PixelRGB8 d d d
             where
-                md = fromIntegral $ min width height
-                zoom = 0.4
-                r = Ray (Vec3 0 0 (-2))
-                        (Vec3 (((fromIntegral x) - ((fromIntegral width) / 2)) / md / zoom)
-                              (((fromIntegral y) - ((fromIntegral height) / 2)) / md / zoom)
-                              0)
+                r = camera (fromIntegral width) (fromIntegral height) (fromIntegral x) (fromIntegral y)
                 d = floor $ (255 -) $ min ((minimum (map (lineRayDistance r) lineSegs)) * 10000) 255
 
 width  = 600
@@ -95,5 +98,5 @@ main = do
         let ry = (t + 0.3) * 2 * pi
         let rz = (t + 0.7) * 2 * pi
         let rotCube = map (rotateLineSeg rx ry rz) cube
-        let image = render width height rotCube
+        let image = render width height (orthoCamera 0.4) rotCube
         writeBitmap (printf filenameFormat frameNo) $ {-rotateCCW90-} image
