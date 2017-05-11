@@ -75,6 +75,14 @@ orthoCamera zoom width height x y = Ray (Vec3 0 0 (-2))
     where
         md = min width height
 
+circularCamera :: Float -> Float -> Float -> Float -> Float -> Ray
+circularCamera zoom width height x y = Ray (Vec3 0 0 (-2))
+                                           (Vec3 (cos ((-x / width * 2 - 0.5) * pi) * zoom)
+                                                 ((y - (height / 2)) / md / zoom)
+                                                 (sin ((-x / width * 2 - 0.5) * pi) * zoom))
+    where
+        md = min width height
+
 render :: Int -> Int -> (Float -> Float -> Float -> Float -> Ray) -> [LineSeg] -> Image PixelRGB8
 render width height camera lineSegs = generateImage pixel width height
     where
@@ -98,5 +106,5 @@ main = do
         let ry = (t + 0.3) * 2 * pi
         let rz = (t + 0.7) * 2 * pi
         let rotCube = map (rotateLineSeg rx ry rz) cube
-        let image = render width height (orthoCamera 0.4) rotCube
+        let image = render width height (circularCamera 0.4) rotCube
         writeBitmap (printf filenameFormat frameNo) $ {-rotateCCW90-} image
