@@ -56,7 +56,7 @@ rotateCCW90 image@Image {imageWidth, imageHeight} = generateImage pixel imageHei
         pixel x y = pixelAt image ((imageWidth - 1) - y) x
 
 cube :: Float -> [LineSeg]
-cube rad = (zipWith color [(cubeVerts !! a, cubeVerts !! b) | b <- [0..7], a <- [0..b], oneCompDiff (cubeVerts !! a) (cubeVerts !! b)] [0..]) ++ [LineSeg v (v &+ (Vec3 epsilon 0 0)) (Vec3 1000 1000 1000) | v <- cubeVerts]
+cube rad = (zipWith color [(cubeVerts !! a, cubeVerts !! b) | b <- [0..7], a <- [0..b], oneCompDiff (cubeVerts !! a) (cubeVerts !! b)] [0..])-- ++ [LineSeg v (v &+ (Vec3 epsilon 0 0)) (Vec3 1000 1000 1000) | v <- cubeVerts]
     where
         epsilon = 1e-6
         comp n i = n `mod` (i * 2) >= i
@@ -89,13 +89,20 @@ circularCamera rad width height x y = Ray (Vec3 0 0 (-2))
 onComp :: (Float -> Float -> Float) -> Vec3 -> Vec3 -> Vec3
 onComp f (Vec3 a b c) (Vec3 x y z) = Vec3 (f a x) (f b y) (f c z)
 
-render :: Int -> Int -> (Float -> Float -> Float -> Float -> Ray) -> Int -> [LineSeg] -> Image PixelRGB8
-render width height camera fade lineSegs = generateImage pixel width height
+render :: Int -> Int -> (Float -> Float -> Float -> Float -> Ray) -> Int -> [LineSeg] -> (Int -> Int -> PixelRGB8)
+render width height camera fade lineSegs x y = PixelRGB8 (floor r) (floor g) (floor b)
     where
-        pixel x y = PixelRGB8 (floor r) (floor g) (floor b)
-            where
-                t = camera (fromIntegral width) (fromIntegral height) (fromIntegral x) (fromIntegral y)
-                Vec3 r g b = onComp min (Vec3 255 255 255) $ foldr1 (&+) [c &* (1 / ((lineRayDistance t l + 1) ^ fade)) | l@(LineSeg _ _ c) <- lineSegs]
+        t = camera (fromIntegral width) (fromIntegral height) (fromIntegral x) (fromIntegral y)
+        Vec3 r g b = onComp min (Vec3 255 255 255) $ foldr1 (&+) [c &* (1 / ((lineRayDistance t l + 1) ^ fade)) | l@(LineSeg _ _ c) <- lineSegs]
+
+border :: Int -> Int -> Vec3 -> Vec3 -> Vec3 -> Vec3 -> (Int -> Int -> PixelRGB8) -> (Int -> Int -> PixelRGB8)
+border width height l r u d p x y | x == 0          = conv l
+                                  | x == width - 1  = conv r
+                                  | y == 0          = conv u
+                                  | y == height - 1 = conv d
+                                  | otherwise       = p x y
+    where
+        conv (Vec3 r g b) = PixelRGB8 (floor r) (floor g) (floor b)
 
 width  = floor $ (fromIntegral height) * pi
 height = 200
@@ -112,5 +119,5 @@ main = do
         let ry = t * 2 * pi-- t        * (-2) * pi
         let rz = 0--(t + 0.2) * ( 2) * pi
         let rotCube = map (rotateLineSeg rx ry rz) (cube 0.33)
-        let image = render width height (circularCamera (sqrt (2 * 0.5 ^ 2) + 0.1)) 50 rotCube
+        let image = generateImage (border width height (Vec3 255 0 0) (Vec3 0 255 0) (Vec3 255 255 0) (Vec3 0 127 255) (render width height (circularCamera (sqrt (2 * 0.5 ^ 2) + 0.1)) 50 rotCube)) width height
         writeBitmap (printf filenameFormat frameNo) $ rotateCCW90 image
