@@ -63,7 +63,7 @@ cube rad = (zipWith color [(cubeVerts !! a, cubeVerts !! b) | b <- [0..7], a <- 
         vcomp n i = if comp n i then rad else -rad
         cubeVerts = [Vec3 (vcomp n 1) (vcomp n 2) (vcomp n 4) | n <- [0..7]]
         ccomp n i = if comp n i then 255 else 127
-        color (a, b) n = let n' = n `mod` 6 + 1 in LineSeg a b (Vec3 255 255 64)--0 (ccomp n' 1) (ccomp n' 2))
+        color (a, b) n = let n' = n `mod` 6 + 1 in LineSeg a b (Vec3 255 255 255)--0 (ccomp n' 1) (ccomp n' 2))
         oneCompDiff (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) = length (filter id $ zipWith (==) [x1, y1, z1] [x2, y2, z2]) == 2
 
 rotate :: Float -> Float -> Float -> Vec3 -> Vec3
@@ -90,10 +90,12 @@ onComp :: (Float -> Float -> Float) -> Vec3 -> Vec3 -> Vec3
 onComp f (Vec3 a b c) (Vec3 x y z) = Vec3 (f a x) (f b y) (f c z)
 
 render :: Int -> Int -> (Float -> Float -> Float -> Float -> Ray) -> Int -> [LineSeg] -> (Int -> Int -> PixelRGB8)
-render width height camera fade lineSegs x y = PixelRGB8 (floor r) (floor g) (floor b)
+render width height camera fade lineSegs x y = conv v
     where
         t = camera (fromIntegral width) (fromIntegral height) (fromIntegral x) (fromIntegral y)
-        Vec3 r g b = onComp min (Vec3 255 255 255) $ foldr1 (&+) [c &* (1 / ((lineRayDistance t l + 1) ^ fade)) | l@(LineSeg _ _ c) <- lineSegs]
+        v = onComp min (Vec3 255 255 255) $ foldr1 (&+) [c &* (1 / ((lineRayDistance t l + 1) ^ fade)) | l@(LineSeg _ _ c) <- lineSegs]
+
+conv (Vec3 r g b) = PixelRGB8 (floor r) (floor g) (floor b)
 
 border :: Int -> Int -> Vec3 -> Vec3 -> Vec3 -> Vec3 -> (Int -> Int -> PixelRGB8) -> (Int -> Int -> PixelRGB8)
 border width height l r u d p x y | x == 0          = conv l
@@ -101,8 +103,9 @@ border width height l r u d p x y | x == 0          = conv l
                                   | y == 0          = conv u
                                   | y == height - 1 = conv d
                                   | otherwise       = p x y
-    where
-        conv (Vec3 r g b) = PixelRGB8 (floor r) (floor g) (floor b)
+
+ticks :: Int -> Int -> Vec3 -> (Int -> Int -> PixelRGB8) -> (Int -> Int -> PixelRGB8)
+ticks width height c p x y = if x `elem` [floor $ (fromIntegral width) / 4 * n | n <- [0..3]] && y >= height - 10 then conv c else p x y
 
 width  = floor $ (fromIntegral height) * pi
 height = 200
@@ -119,5 +122,5 @@ main = do
         let ry = t * 2 * pi-- t        * (-2) * pi
         let rz = 0--(t + 0.2) * ( 2) * pi
         let rotCube = map (rotateLineSeg rx ry rz) (cube 0.33)
-        let image = generateImage (border width height (Vec3 255 0 0) (Vec3 0 255 0) (Vec3 255 255 0) (Vec3 0 127 255) (render width height (circularCamera (sqrt (2 * 0.5 ^ 2) + 0.1)) 50 rotCube)) width height
+        let image = generateImage (ticks width height (Vec3 255 0 255) (border width height (Vec3 255 0 0) (Vec3 0 255 0) (Vec3 255 255 0) (Vec3 0 160 255) (render width height (circularCamera (sqrt (2 * 0.5 ^ 2) + 0.1)) 60 rotCube))) width height
         writeBitmap (printf filenameFormat frameNo) $ rotateCCW90 image
