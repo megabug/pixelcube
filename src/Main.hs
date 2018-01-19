@@ -85,11 +85,11 @@ orthoCamera zoom width height x y = Ray (Vec3 0 0 (-2))
     where
         md = min width height
 
-circularCamera :: Float -> Float -> Float -> Float -> Float -> Ray
-circularCamera rad width height x y = Ray (Vec3 0 0 (-2))
-                                          (Vec3 (cos ((-x / width * 2 + 0.5) * pi) * rad)
-                                                ((y / height - 0.5) * 2 * rad)
-                                                (sin ((-x / width * 2 + 0.5) * pi) * rad))
+circularCamera :: Float -> Float -> Float -> Float -> Float -> Float -> Ray
+circularCamera rad backDist width height x y = Ray (Vec3 0 0 (-backDist))
+                                                   (Vec3 (cos ((-x / width * 2 + 0.5) * pi) * rad)
+                                                         ((y / height - 0.5) * 2 * rad)
+                                                         (sin ((-x / width * 2 + 0.5) * pi) * rad))
 
 onComp :: (Float -> Float -> Float) -> Vec3 -> Vec3 -> Vec3
 onComp f (Vec3 a b c) (Vec3 x y z) = Vec3 (f a x) (f b y) (f c z)
@@ -131,5 +131,5 @@ main = do
         let ry = t * 2 * pi-- t        * (-2) * pi
         let rz = 0--(t + 0.2) * ( 2) * pi
         let rotCube = map (rotateLineSeg rx ry rz) (cube 0.33)
-        let image = generateImage (ticks width height (Vec3 255 0 255) (border width height (Vec3 255 0 0) (Vec3 0 255 0) (Vec3 255 255 0) (Vec3 0 160 255) (render width height (circularCamera (sqrt (2 * 0.5 ^ 2) + 0.1)) 60 rotCube))) width height
+        let image = generateImage (ticks width height (Vec3 255 0 255) (border width height (Vec3 255 0 0) (Vec3 0 255 0) (Vec3 255 255 0) (Vec3 0 160 255) (render width height (circularCamera (sqrt (2 * 0.5 ^ 2) + 0.1) 2) 60 rotCube))) width height
         writeBitmap (printf filenameFormat frameNo) $ rotateCCW90 image
