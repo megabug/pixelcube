@@ -123,8 +123,8 @@ main = do
     args <- getArgs
     let filenameFormat = args !! 0
 
-    let numFrames = 17 :: Int
-    forM_ [0..(numFrames - 1)] $ \frameNo -> do
+    let numFrames = 17
+    forM_ [0..((numFrames :: Int) - 1)] $ \frameNo -> do
         putStrLn (printf "%d / %d..." (frameNo + 1) numFrames)
         let t = (fromIntegral frameNo) / (fromIntegral numFrames)
         let rx = 0--(t + 0.7) * ( 4) * pi
