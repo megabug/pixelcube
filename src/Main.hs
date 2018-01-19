@@ -17,8 +17,8 @@ import Data.Vect.Float.Base
 data Ray = Ray Vec3 Vec3 deriving Show
 data LineSeg = LineSeg Vec3 Vec3 Vec3 deriving Show
 
-lineRayDistance :: Ray -> LineSeg -> Float
-lineRayDistance (Ray a0 a1) (LineSeg b0 b1 _) = if denom < epsilon then parallel else nonparallel
+closestLineRayPts :: Ray -> LineSeg -> (Vec3, Vec3)
+closestLineRayPts (Ray a0 a1) (LineSeg b0 b1 _) = if denom < epsilon then parallel else nonparallel
     where
         epsilon = 1e-6
         a = a1 &- a0
@@ -31,9 +31,9 @@ lineRayDistance (Ray a0 a1) (LineSeg b0 b1 _) = if denom < epsilon then parallel
         denom = normsqr cross
         d0 = _A &. (b0 &- a0)
         d1 = _A &. (b1 &- a0)
-        parallel = if d0 <= 0 && d1 <= 0
-                       then norm (a0 &- (if abs d0 < abs d1 then b0 else b1))
-                       else norm ((_A &* d0) &+ a0 &- b0)
+        parallel = (a0, if d0 <= 0 && d1 <= 0
+                        then (if abs d0 < abs d1 then b0 else b1)
+                        else (b0 &+ (_A &* d0)))
         t = b0 &- a0
         detA = det3 t _B cross
         detB = det3 t _A cross
@@ -48,7 +48,12 @@ lineRayDistance (Ray a0 a1) (LineSeg b0 b1 _) = if denom < epsilon then parallel
         pB'' = if t0 < 0 then b0 &+ (_B &* (clamp 0 magB dot1)) else pB'
         dot2 = _A &. (pB' &- a0)
         pA'' = if t1 < 0 || t1 > magB then a0 &+ (_A &* (max 0 dot2)) else pA'
-        nonparallel = norm (pA'' &- pB'')
+        nonparallel = (pA'', pB'')
+
+lineRayDistance :: Ray -> LineSeg -> Float
+lineRayDistance a b = norm (a' &- b')
+    where
+        (a', b') = closestLineRayPts a b
 
 rotateCCW90 :: Pixel a => Image a -> Image a
 rotateCCW90 image@Image {imageWidth, imageHeight} = generateImage pixel imageHeight imageWidth
@@ -93,7 +98,11 @@ render :: Int -> Int -> (Float -> Float -> Float -> Float -> Ray) -> Int -> [Lin
 render width height camera fade lineSegs x y = conv v
     where
         t = camera (fromIntegral width) (fromIntegral height) (fromIntegral x) (fromIntegral y)
-        v = onComp min (Vec3 255 255 255) $ foldr1 (&+) [c &* (1 / ((lineRayDistance t l + 1) ^ fade)) | l@(LineSeg _ _ c) <- lineSegs]
+        v = onComp min (Vec3 255 255 255) $ foldr1 (&+) (map lc lineSegs)
+        lc l@(LineSeg _ _ c) = if signum cpbz <= signum tz then c &* (1 / (((lineRayDistance t l) + 1) ^ fade)) else Vec3 0 0 0
+            where
+                Ray _ (Vec3 _ _ tz) = t
+                (_, (Vec3 _ _ cpbz)) = closestLineRayPts t l
 
 conv (Vec3 r g b) = PixelRGB8 (floor r) (floor g) (floor b)
 
