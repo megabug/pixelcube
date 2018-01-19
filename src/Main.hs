@@ -123,7 +123,7 @@ main = do
     args <- getArgs
     let filenameFormat = args !! 0
 
-    let numFrames = 10 :: Int
+    let numFrames = 17 :: Int
     forM_ [0..(numFrames - 1)] $ \frameNo -> do
         putStrLn (printf "%d / %d..." (frameNo + 1) numFrames)
         let t = (fromIntegral frameNo) / (fromIntegral numFrames)
