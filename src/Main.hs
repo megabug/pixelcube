@@ -87,9 +87,9 @@ orthoCamera zoom width height x y = Ray (Vec3 0 0 (-2))
 
 circularCamera :: Float -> Float -> Float -> Float -> Float -> Float -> Ray
 circularCamera rad backDist width height x y = Ray (Vec3 0 0 (-backDist))
-                                                   (Vec3 (cos ((-x / width * 2 + 0.5) * pi) * rad)
+                                                   (Vec3 (cos (-x / width * 2 * pi) * rad)
                                                          ((y / height - 0.5) * 2 * rad)
-                                                         (sin ((-x / width * 2 + 0.5) * pi) * rad))
+                                                         (sin (-x / width * 2 * pi) * rad))
 
 onComp :: (Float -> Float -> Float) -> Vec3 -> Vec3 -> Vec3
 onComp f (Vec3 a b c) (Vec3 x y z) = Vec3 (f a x) (f b y) (f c z)
