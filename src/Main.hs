@@ -114,7 +114,7 @@ border width height l r u d p x y | x == 0          = conv l
                                   | otherwise       = p x y
 
 ticks :: Int -> Int -> Vec3 -> (Int -> Int -> PixelRGB8) -> (Int -> Int -> PixelRGB8)
-ticks width height c p x y = if x `elem` [floor $ (fromIntegral width) / 4 * n | n <- [0..3]] && y >= height - 10 then conv c else p x y
+ticks width height c p x y = if x `elem` [floor $ (fromIntegral width) / 4 * n | n <- [1..3]] && y >= height - 20 then conv c else p x y
 
 width  = floor $ (fromIntegral height) * pi
 height = 200
@@ -123,13 +123,13 @@ main = do
     args <- getArgs
     let filenameFormat = args !! 0
 
-    let numFrames = 17
+    let numFrames = 53
     forM_ [0..((numFrames :: Int) - 1)] $ \frameNo -> do
         putStrLn (printf "%d / %d..." (frameNo + 1) numFrames)
         let t = (fromIntegral frameNo) / (fromIntegral numFrames)
-        let rx = 0--(t + 0.7) * ( 4) * pi
-        let ry = t * 2 * pi-- t        * (-2) * pi
-        let rz = 0--(t + 0.2) * ( 2) * pi
+        let rx = (t + 0.7) * ( 4) * pi
+        let ry =  t        * (-2) * pi
+        let rz = (t + 0.2) * ( 2) * pi
         let rotCube = map (rotateLineSeg rx ry rz) (cube 0.33)
-        let image = generateImage (ticks width height (Vec3 255 0 255) (border width height (Vec3 255 0 0) (Vec3 0 255 0) (Vec3 255 255 0) (Vec3 0 160 255) (render width height (circularCamera (sqrt (2 * 0.5 ^ 2) + 0.1) 2) 60 rotCube))) width height
+        let image = generateImage (ticks width height (Vec3 255 0 255) (border width height (Vec3 255 0 0) (Vec3 0 255 0) (Vec3 255 255 0) (Vec3 0 160 255) (render width height (circularCamera (sqrt (2 * 0.5 ^ 2)) 15) 60 rotCube))) width height
         writeBitmap (printf filenameFormat frameNo) $ rotateCCW90 image
