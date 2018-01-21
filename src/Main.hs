@@ -90,27 +90,19 @@ rotateCCW90 image@(Image {imageWidth, imageHeight}) =
         pixel x y = pixelAt image ((imageWidth - 1) - y) x
 
 cube :: Float -> Vec3 -> Float -> [LineSeg]
-cube rad color glow = cubeLines ++ cubePts
-  where
-    v n i | n `mod` (i * 2) >= i = rad
-          | otherwise            = -rad
-    cubeVerts = [Vec3 (v n 1) (v n 2) (v n 4) | n <- [0..7]]
+cube rad color glow =
+      [
+          LineSeg (cubeVerts !! a) (cubeVerts !! b) color
+          | b <- [0..7], a <- [0..b],
+          oneCompDiff (cubeVerts !! a) (cubeVerts !! b)
+      ]
+        where
+          v n i | n `mod` (i * 2) >= i = rad
+                | otherwise            = -rad
+          cubeVerts = [Vec3 (v n 1) (v n 2) (v n 4) | n <- [0..7]]
 
-    oneCompDiff (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) =
-        length (filter id $ zipWith (==) [x1, y1, z1] [x2, y2, z2]) == 2
-
-    cubeLines =
-        [
-            LineSeg (cubeVerts !! a) (cubeVerts !! b) color
-            | b <- [0..7], a <- [0..b],
-            oneCompDiff (cubeVerts !! a) (cubeVerts !! b)
-        ]
-
-    cubePts =
-        [
-            LineSeg v (v &+ (Vec3 epsilon 0 0)) (color &* glow)
-            | v <- cubeVerts
-        ]
+          oneCompDiff (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) =
+              length (filter id $ zipWith (==) [x1, y1, z1] [x2, y2, z2]) == 2
 
 rotate :: Float -> Float -> Float -> Vec3 -> Vec3
 rotate rx ry rz v = (rotMatrixZ rz) *. (rotMatrixY ry) *. (rotMatrixX rx) *. v
@@ -191,7 +183,7 @@ main = do
                     border width height (Vec3 0 255 0) (Vec3 255 0 0)
                            (Vec3 255 255 0) (Vec3 0 160 255) $
                     render width height
-                           (circularCamera (sqrt (2 * 0.5 ^ 2)) 15) 60
+                           (circularCamera (sqrt (2 * 0.5 ^ 2)) 15) 120
                            rotCube
         let image = generateImage pixel width height
 
