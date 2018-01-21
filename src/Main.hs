@@ -188,7 +188,7 @@ main = do
                           (cube 0.35 (Vec3 255 255 255) 3)
 
         let pixel = ticks width height (Vec3 255 0 255) $
-                    border width height (Vec3 255 0 0) (Vec3 0 255 0)
+                    border width height (Vec3 0 255 0) (Vec3 255 0 0)
                            (Vec3 255 255 0) (Vec3 0 160 255) $
                     render width height
                            (circularCamera (sqrt (2 * 0.5 ^ 2)) 15) 60
